@@ -1,7 +1,9 @@
 import numpy as np
 import os
 import pandas as pd
-from ..utils.body import Body
+import sys
+sys.path.append('./utils')
+from utils.body import Body
 from tqdm import tqdm
 import cv2
 
@@ -51,7 +53,7 @@ def get_mult_keypoints_cordinates(subset:np.ndarray,candidate:list,num_max:int=1
                     cordinates.append([-1,-1])
                 else:
                     Y=candidate[part.astype(int),0]
-                    X=candidate[part.astype(int),0]
+                    X=candidate[part.astype(int),1]
                     cordinates.append([X,Y])
             multi_cordinates.append(cordinates)
 
@@ -76,16 +78,17 @@ def record_keypoint_csv(input_folder,output_path,model):
 
         oriImg=cv2.imread(os.path.join(input_folder,img_name))
         candidate, subset = model(oriImg)
+        print(candidate)
         
         #这里我们同样只记录得分最高人的人体关键点
         pose_cords=get_mult_keypoints_cordinates(subset,candidate,1).squeeze(0)
-        result_file.write(f'{img_name}:{str(pose_cords[:,0])},{str(pose_cords[:,1])}\n')
+        result_file.write(f'{img_name}:{str(list(pose_cords[:,0]))}:{str(list(pose_cords[:,1]))}\n')
 
         result_file.flush()   #数据立即写入文件，不放入缓冲区
 
 
-input_folder=''                            #待获取人体关键点的文件夹
-output_path=''                              #存放结果csv文件的路径
+input_folder='/root/human_pose/human_pose_transfer/human_pose/test/pose_img'                            #待获取人体关键点的文件夹
+output_path='/root/human_pose/human_pose_transfer/human_pose/test/pose_csv/fashion_csv'                              #存放结果csv文件的路径
 
 body_estimation = Body('model/body_pose_model.pth')
 

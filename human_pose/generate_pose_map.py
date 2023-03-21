@@ -9,9 +9,11 @@ MISSING_VALUE=-1
 
 #将坐标从字符串加载成list的数据
 def load_pose_cords_from_strings(y_str,x_str):
+    print(y_str)
+    print(x_str)
     y_cords=json.loads(y_str)
     x_cords=json.loads(x_str)
-    return np.concatenate([y_cords[:,None],x_cords[:,None]],axis=1)
+    return np.concatenate([np.expand_dims(y_cords,axis=1),np.expand_dims(x_cords,axis=1)],axis=1)
 
 #根据关键点坐标来生成多通道热力图
 def cords_to_map(cords,img_size,sigma=6):
@@ -20,7 +22,7 @@ def cords_to_map(cords,img_size,sigma=6):
         img_size:表示原始图片的大小，
         sigma:根据距离来计算相应值时会用一个参数
     '''
-    result=np.zeros(img_size+cords.shape[0],dtype='uint8')
+    result=np.zeros(img_size+cords.shape[0:1],dtype='uint8')
 
     for i,point in enumerate(cords):
         if point[0] == MISSING_VALUE or point[1]== MISSING_VALUE:
@@ -44,13 +46,12 @@ def compute_pose(img_size:tuple,keypoint_csv,savePath,sigma):
         file_name=os.path.join(savePath,name+'.npy')
         kp_array=load_pose_cords_from_strings(row.keypoints_y,row.keypoints_x)
 
-
         pose=cords_to_map(kp_array,img_size,sigma)
         np.save(file_name,pose)
 
 img_size=(256,178)   #图像的高宽，根据需要自行更换
-keypoint_csv=''
-savePath=''
+keypoint_csv='/root/human_pose/human_pose_transfer/human_pose/test/pose_csv/fashion_csv'
+savePath='/root/human_pose/human_pose_transfer/human_pose/test/pose_np'
 sigma=6
 
 compute_pose(img_size,keypoint_csv,savePath,sigma)

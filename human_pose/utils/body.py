@@ -304,12 +304,13 @@ class Body(object):
 if __name__ == "__main__":
     body_estimation = Body('../model/body_pose_model.pth')
 
-    test_image = '../test/person_img/01_1_front.jpg'
-    oriImg = cv2.imread(test_image)  # B,G,R order
-    candidate, subset = body_estimation(oriImg)
-    if len(subset)>0:
-        canvas = util.draw_bodypose(oriImg, candidate, subset)
-        plt.imsave('../test/pose_img/01_1_front.jpg',canvas[:, :, [2, 1, 0]])   #将BGR调整成RGB
-    else:
-        print('不足以构成人体')
+    for i in os.listdir('/root/human_pose/test/test_data/video/src_akun_1'):
+        test_image = os.path.join('/root/human_pose/test/test_data/video/src_akun_1',i)
+        oriImg = cv2.imread(test_image)  # B,G,R order
+        candidate, subset = body_estimation(oriImg)
+        if len(subset)>0:
+            canvas = util.draw_bodypose(oriImg, candidate, subset)
+            plt.imsave(os.path.join('/root/human_pose/test/test_data/video/pose',i),canvas[:, :, [2, 1, 0]])   #将BGR调整成RGB
+        else:
+            print('不足以构成人体')
 

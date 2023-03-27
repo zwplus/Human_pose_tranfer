@@ -49,7 +49,7 @@ def compute_pose(img_size:tuple,keypoint_csv,savePath,sigma):
         pose=cords_to_map(kp_array,img_size,sigma)
         np.save(file_name,pose)
 
-img_size=(256,178)   #图像的高宽，根据需要自行更换
+img_size=(256,176)   #图像的高宽，根据需要自行更换
 keypoint_csv='/root/human_pose/human_pose_transfer/human_pose/test/pose_csv/fashion_csv'
 savePath='/root/human_pose/human_pose_transfer/human_pose/test/pose_np'
 sigma=6

@@ -6,26 +6,9 @@ sys.path.append('./utils')
 from utils.body import Body
 from tqdm import tqdm
 import cv2
+import json
 
 #每张图片只记录可信度最高的那个的关键点信息
-
-def get_single_keypoints_cordinates(subset,candidate):
-
-    if len(subset)!=0:
-        cordinates=[]
-
-        single_index=np.argmax(subset[:,-2])
-
-        for part in subset[single_index,:-2]:
-            if part==-1:
-                cordinates.append([-1,-1])
-            else:
-                Y=candidate[part.astype(int),0]
-                X=candidate[part.astype(int),0]
-                cordinates.append([X,Y])
-    else:
-        cordinates=[[-1,-1]*18]
-    return np.array(cordinates).astype(int)
 
 
 def get_mult_keypoints_cordinates(subset:np.ndarray,candidate:list,num_max:int=1)->np.ndarray:
@@ -50,39 +33,29 @@ def get_mult_keypoints_cordinates(subset:np.ndarray,candidate:list,num_max:int=1
             cordinates=[]
             for part in subset[i,:-2]:
                 if part==-1:
-                    cordinates.append([-1,-1])
+                    cordinates.append([0,0,0])
                 else:
                     Y=candidate[part.astype(int),0]
                     X=candidate[part.astype(int),1]
-                    cordinates.append([X,Y])
+                    #增加得分这一选项
+                    score=candidate[part.astype(int),2]
+                    cordinates.append([X,Y,score])
             multi_cordinates.append(cordinates)
 
     else:
-        cordinates=[[-1,-1]*18]
+        cordinates=[[0,0,0]*18]
         multi_cordinates.append(cordinates)
-    return np.array(multi_cordinates).astype(int)
+    return np.array(multi_cordinates)
 
 
 def record_keypoint_csv(input_folder,output_path,model):
-    if os.path.exists(output_path):
-        processed_names=set(pd.read_csv(output_path,sep=':')['name'])  #构建已有名称的集合
-        result_file=open(output_path,'a')
-    else:
-        result_file=open(output_path,'w')
-        processed_names=set()
-        result_file.write('name:keypoints_y:keypoints_x\n')
-
+    if not os.path.exists(output_path):
+        os.makedirs(output_path)
     img_list=os.listdir(input_folder)
 
-    # if len(img_list)<=1:
-    #     img_list=img_list
-    # else:
-    #     img_list=sorted(img_list,key=lambda x : int(x.split('_')[-1].split('.')[0]))
-
-
     for img_name in tqdm(img_list):
-        if img_name in processed_names:
-            continue
+
+        result_file=open(os.path.join(output_path,img_name.split('.')[0]+'.json'),'w')
 
         oriImg=cv2.imread(os.path.join(input_folder,img_name))
         oriImg=oriImg[:,40:216]
@@ -91,15 +64,21 @@ def record_keypoint_csv(input_folder,output_path,model):
         
         #这里我们同样只记录得分最高人的人体关键点
         pose_cords=get_mult_keypoints_cordinates(subset,candidate,1).squeeze(0)
+        print(pose_cords)
+        pose_cords=pose_cords.reshape(54).tolist()
         
+        pose_info_dict={
+            "version":1.0,
+            "people":[{"pose_keypoints":pose_cords}]
+        }
 
-        result_file.write(f'{img_name}:{str(list(pose_cords[:,0]))}:{str(list(pose_cords[:,1]))}\n')
+        json.dump(pose_info_dict,result_file)
+        result_file.close
 
-        result_file.flush()   #数据立即写入文件，不放入缓冲区
 
 
-input_folder='/root/human_pose/test/test_data/video/src_akun_1'                            #待获取人体关键点的文件夹
-output_path='/root/human_pose/test/test_data/video/akun.json'                              #存放结果csv文件的路径
+input_folder='/root/human_pose/test/test_data/test_json/src_akun_1'                            #待获取人体关键点的文件夹
+output_path='/root/human_pose/test/test_data/test_json/src_akun_1_json'                              #存放结果csv文件的路径
 
 body_estimation = Body('model/body_pose_model.pth')
 
